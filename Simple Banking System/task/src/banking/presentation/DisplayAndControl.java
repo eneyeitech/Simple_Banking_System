@@ -10,9 +10,15 @@ public class DisplayAndControl {
     private final Scanner scanner;
     private final AccountService accountService;
 
+
     public DisplayAndControl() {
         scanner =  new Scanner(System.in);
         accountService = new AccountService();
+    }
+
+    public DisplayAndControl(AccountService accountService) {
+        scanner =  new Scanner(System.in);
+        this.accountService = accountService;
     }
 
     public void run() {
@@ -42,7 +48,8 @@ public class DisplayAndControl {
             case "1":
                 Account account = accountService.createAccount();
                 if (account!=null) {
-                    accountService.save(account);
+                    //accountService.save(account);
+                    accountService.saveToDB(account);
                     System.out.println("Your card has been created");
                     System.out.printf("Your card number:\n%s\nYour card PIN:\n%s\n\n", account.getCard().getCardNumber(), account.getCard().getCardPin());
 
@@ -64,6 +71,7 @@ public class DisplayAndControl {
                 break;
             case "0":
                 System.out.println("Bye!");
+                System.exit(0);
             default:
                 break;
         }
@@ -79,6 +87,7 @@ public class DisplayAndControl {
                 choice();
                 break;
             case "0":
+                System.exit(0);
             default:
                 break;
         }
@@ -89,7 +98,9 @@ public class DisplayAndControl {
         String cn = scanner.nextLine();
         System.out.println("Enter your PIN:");
         String p = scanner.nextLine();
-        Account account = accountService.find(cn);
+        //Account account = accountService.find(cn);
+        Account account = accountService.findInDB(cn);
+        System.out.println(account);
         if (account == null) {
             System.out.println("Wrong card number or PIN!\n");
             return;

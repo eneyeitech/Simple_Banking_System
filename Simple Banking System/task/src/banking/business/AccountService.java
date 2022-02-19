@@ -4,7 +4,9 @@ import banking.database.Store;
 import banking.helpers.CardPinGenerator;
 import banking.helpers.CustomerAccountNumberGenerator;
 import banking.helpers.LuhnAlgorithmHelper;
+import banking.persistence.AccountDAO;
 import banking.persistence.AccountRepository;
+import banking.persistence.DAOFactory;
 
 import java.util.List;
 
@@ -13,12 +15,16 @@ public class AccountService {
     private CustomerAccountNumberGenerator customerAccountNumberGenerator;
     private CardPinGenerator cardPinGenerator;
     private LuhnAlgorithmHelper luhnAlgorithmHelper;
+    private AccountDAO accountDAO;
+    private DAOFactory sqlite3Factory;
 
     public AccountService() {
         accountRepository = new AccountRepository();
         customerAccountNumberGenerator = new CustomerAccountNumberGenerator();
         cardPinGenerator = new CardPinGenerator();
         luhnAlgorithmHelper = new LuhnAlgorithmHelper();
+        sqlite3Factory = DAOFactory.getDAOFactory(DAOFactory.SQLITE3);
+        accountDAO = sqlite3Factory.getAccountDAO();
     }
 
     public String createPin() {
@@ -68,8 +74,16 @@ public class AccountService {
         return accountRepository.addAccount(account);
     }
 
+    public Account saveToDB(Account account) {
+        return accountDAO.addAccount(account);
+    }
+
     public Account find(String c) {
         return accountRepository.findAccount(c);
+    }
+
+    public Account findInDB(String c) {
+        return accountDAO.findAccount(c);
     }
 
     public boolean exist(String c) {
@@ -80,4 +94,11 @@ public class AccountService {
         return accountRepository.allAccounts();
     }
 
+    public void createTable(){
+        accountDAO.createTable();
+    }
+
+    public void dropTable() {
+        accountDAO.dropTable();
+    }
 }
