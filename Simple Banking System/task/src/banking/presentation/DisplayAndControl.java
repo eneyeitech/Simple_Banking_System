@@ -83,6 +83,16 @@ public class DisplayAndControl {
                 System.out.printf("Balance: %s\n", account.getBalance());
                 break;
             case "2":
+                addIncome(account);
+                break;
+            case "3":
+                doTransfer(account);
+                break;
+            case "4":
+                closeAccount(account);
+                choice();
+                break;
+            case "5":
                 System.out.println("You have successfully logged out!\n");
                 choice();
                 break;
@@ -113,5 +123,58 @@ public class DisplayAndControl {
 
         System.out.println("You have successfully logged in!\n");
         choice2(account);
+    }
+
+    private void addIncome(Account account) {
+        System.out.println("Enter income\n");
+        long amt = scanner.nextLong();
+        if (amt > 0) {
+            account.setBalance(account.getBalance() + amt);
+            accountService.updateBalanceInDB(account);
+        }
+        System.out.println("Income was added!\n");
+    }
+
+    private void doTransfer(Account account) {
+        System.out.println("Transfer");
+        System.out.println("Enter card number:");
+        String cn = scanner.nextLine();
+
+        if(account.getCard().getCardNumber().equalsIgnoreCase(cn)) {
+            System.out.println("You can't transfer money to the same account\n");
+            return;
+        }
+
+        if (!accountService.isValidCard(cn)) {
+             System.out.println("Probably you made a mistake in the card number. Please try again!\n");
+            return;
+        }
+
+        Account transferTo = accountService.findInDB(cn);
+        System.out.println(transferTo);
+        if (transferTo == null) {
+            System.out.println("Such a card does not exist.\n");
+            return;
+        }
+
+        System.out.println("Enter how much money you want to transfer:");
+        long amt = scanner.nextLong();
+        if (amt <= account.getBalance()) {
+            account.setBalance(account.getBalance() - amt);
+            accountService.updateBalanceInDB(account);
+
+            transferTo.setBalance(transferTo.getBalance() + amt);
+            accountService.updateBalanceInDB(transferTo);
+        } else {
+            System.out.println("Not enough money!");
+            return;
+        }
+        System.out.println("Success!");
+    }
+
+    private void closeAccount(Account account) {
+        accountService.deleteFromDB(account);
+        System.out.println("The account has been closed!");
+
     }
 }

@@ -54,6 +54,10 @@ public class AccountService {
         return 10 - rem;
     }
 
+    public boolean isValidCard(String cardNo) {
+        return luhnAlgorithmHelper.checkLuhn(cardNo);
+    }
+
     public Account createAccount() {
         Account account = new Account();
         Card card = new Card();
@@ -76,6 +80,14 @@ public class AccountService {
 
     public Account saveToDB(Account account) {
         return accountDAO.addAccount(account);
+    }
+
+    public Account updateBalanceInDB(Account account) {
+        return accountDAO.updateBalance(account);
+    }
+
+    public Account deleteFromDB(Account account) {
+        return accountDAO.deleteAccount(account);
     }
 
     public Account find(String c) {

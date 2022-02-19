@@ -95,4 +95,47 @@ public class SQLITE3AccountDAO implements AccountDAO{
             e.printStackTrace();
         }
     }
+
+    @Override
+    public Account updateBalance(Account a) {
+        String updatePaymentSQL = "UPDATE \"card\" " +
+                "SET balance = ? WHERE number = ?";
+
+        try (Connection con = SQLITE3DAOFactory.createConnection()) {
+
+            try (PreparedStatement insertPayment = con.prepareStatement(updatePaymentSQL);) {
+
+                // Insert a payment
+                insertPayment.setLong(1, a.getBalance());
+                insertPayment.setString(2, a.getCard().getCardNumber());
+                insertPayment.executeUpdate();
+                System.out.println(a.getCard().getCardNumber() + " updated");
+
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return a;
+    }
+
+    @Override
+    public Account deleteAccount(Account a) {
+        String updatePaymentSQL = "DELETE FROM \"card\" " +
+                "WHERE number = ?";
+
+        try (Connection con = SQLITE3DAOFactory.createConnection()) {
+
+            try (PreparedStatement insertPayment = con.prepareStatement(updatePaymentSQL);) {
+
+                // Delete a card
+                insertPayment.setString(1, a.getCard().getCardNumber());
+                insertPayment.executeUpdate();
+                System.out.println(a.getCard().getCardNumber() + " deleted");
+
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return a;
+    }
 }

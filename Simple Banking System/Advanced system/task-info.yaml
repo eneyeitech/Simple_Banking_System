@@ -677,6 +677,767 @@ files:
         }
     }
   learner_created: false
+- name: src/banking/persistence/AccountRepository.java
+  visible: true
+  text: |
+    package banking.persistence;
+
+    import banking.business.Account;
+    import banking.database.Store;
+
+    import java.util.List;
+
+    public class AccountRepository implements IAccountStore{
+        private Store store = Store.getInstance();
+
+        @Override
+        public Account addAccount(Account a) {
+            return store.addAccount(a);
+        }
+
+        @Override
+        public Account findAccount(String c) {
+            return store.findAccount(c);
+        }
+
+        @Override
+        public boolean cardExist(String c) {
+            return store.cardExist(c);
+        }
+
+        @Override
+        public List<Account> allAccounts() {
+            return store.all();
+        }
+    }
+  learner_created: true
+- name: src/banking/database/Store.java
+  visible: true
+  text: |
+    package banking.database;
+
+    import banking.business.Account;
+    import banking.business.Card;
+
+    import java.util.ArrayList;
+    import java.util.HashMap;
+    import java.util.List;
+    import java.util.Map;
+
+    public class Store {
+        private static Store instance;
+
+        private Map<String, Account> accountMap;
+
+        private Store() {
+            accountMap = new HashMap<>();
+        }
+
+        public static Store getInstance() {
+            if (instance == null) {
+                instance = new Store();
+            }
+            return instance;
+        }
+
+
+        public Account addAccount(Account account) {
+            return accountMap.put(account.getCard().getCardNumber(), account);
+        }
+
+        public Account findAccount(String cardNumber) {
+            return accountMap.get(cardNumber);
+        }
+
+        public boolean cardExist(String cardNumber) {
+            return accountMap.containsKey(cardNumber);
+        }
+
+        public List<Account> all() {
+            List<Account> cards = new ArrayList<>();
+            for (Map.Entry<String, Account> entry : accountMap.entrySet()) {
+                cards.add(entry.getValue());
+            }
+            return cards;
+        }
+
+        public Map<String, Account> getAccountMap() {
+            return accountMap;
+        }
+
+        public void setAccountMap(Map<String, Account> accountMap) {
+            this.accountMap = accountMap;
+        }
+    }
+  learner_created: true
+- name: src/banking/helpers/CustomerAccountNumberGenerator.java
+  visible: true
+  text: |
+    package banking.helpers;
+
+    import java.util.Random;
+
+    public class CustomerAccountNumberGenerator {
+
+        private int leftLimit = 48;
+        private int rightLimit = 57;
+        private int targetStringLength = 9;
+        private Random random = new Random(1000000000);
+
+        public String generate9Digits() {
+            return random.ints(leftLimit, rightLimit + 1)
+                    .limit(targetStringLength)
+                    .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
+                    .toString();
+        }
+    }
+  learner_created: true
+- name: src/banking/presentation/Menu.java
+  visible: true
+  text: |
+    package banking.presentation;
+
+    public class Menu {
+
+        public static void startMenu() {
+            System.out.println("1. Create an account");
+            System.out.println("2. Log into account");
+            System.out.println("0. Exit");
+        }
+
+        public static void loginMenu() {
+            System.out.println("1. Balance");
+            System.out.println("2. Add income");
+            System.out.println("3. Do transfer");
+            System.out.println("4. Close account");
+            System.out.println("5. Log out");
+            System.out.println("0. Exit");
+        }
+    }
+  learner_created: true
+- name: src/banking/persistence/IAccountStore.java
+  visible: true
+  text: |
+    package banking.persistence;
+
+    import banking.business.Account;
+
+    import java.util.List;
+
+    public interface IAccountStore {
+
+        public Account addAccount(Account a);
+        public Account findAccount(String c);
+        public boolean cardExist(String c);
+        public List<Account> allAccounts();
+    }
+  learner_created: true
+- name: src/banking/persistence/DAOFactory.java
+  visible: true
+  text: |
+    package banking.persistence;
+
+    public abstract class DAOFactory {
+
+        // List of DAO types supported by the factory
+        public static final int SQLITE3 = 1;
+
+        // There will be a method for each DAO that can be
+        // created. The concrete factories will have to
+        // implement these methods.
+        public abstract AccountDAO getAccountDAO();
+
+        public static DAOFactory getDAOFactory(int whichFactory) {
+            switch (whichFactory) {
+                case SQLITE3:
+                    return new SQLITE3DAOFactory();
+                default:
+                    return null;
+            }
+        }
+    }
+  learner_created: true
+- name: src/banking/persistence/AccountDAO.java
+  visible: true
+  text: |
+    package banking.persistence;
+
+    import banking.business.Account;
+
+    import java.util.List;
+
+    public interface AccountDAO {
+        public Account addAccount(Account a);
+        public Account findAccount(String c);
+        public boolean cardExist(String c);
+        public List<Account> allAccounts();
+        public void createTable();
+        public void dropTable();
+    }
+  learner_created: true
+- name: src/banking/helpers/LuhnAlgorithmHelper.java
+  visible: true
+  text: |
+    package banking.helpers;
+
+    public class LuhnAlgorithmHelper {
+
+        public  boolean checkLuhn(String cardNo) {
+            int nDigits = cardNo.length();
+
+            int sum = 0;
+            for (int i = 0; i < nDigits; i++)
+            {
+                char tmp = cardNo.charAt(i);
+                // #1: fixed the '0' problem
+                int num = tmp - '0';
+                int product;
+                if (i % 2 != 0){
+                    product = num * 1;
+                }
+                else{
+                    product = num * 2;
+                }
+                if (product > 9)
+                    product -= 9;
+                sum+= product;
+            }
+
+            return (sum % 10 == 0);
+        }
+
+        public  int luhnSum(String cardNo) {
+            int nDigits = cardNo.length();
+
+            int sum = 0;
+            for (int i = 0; i < nDigits; i++)
+            {
+                char tmp = cardNo.charAt(i);
+                // #1: fixed the '0' problem
+                int num = tmp - '0';
+                int product;
+                if (i % 2 != 0){
+                    product = num * 1;
+                }
+                else{
+                    product = num * 2;
+                }
+                if (product > 9)
+                    product -= 9;
+                sum+= product;
+            }
+            return sum;
+        }
+    }
+  learner_created: true
+- name: src/banking/presentation/DisplayAndControl.java
+  visible: true
+  text: |
+    package banking.presentation;
+
+    import banking.business.Account;
+    import banking.business.AccountService;
+
+    import java.util.List;
+    import java.util.Scanner;
+
+    public class DisplayAndControl {
+        private final Scanner scanner;
+        private final AccountService accountService;
+
+
+        public DisplayAndControl() {
+            scanner =  new Scanner(System.in);
+            accountService = new AccountService();
+        }
+
+        public DisplayAndControl(AccountService accountService) {
+            scanner =  new Scanner(System.in);
+            this.accountService = accountService;
+        }
+
+        public void run() {
+            choice();
+        }
+
+        private void choice(){
+            String input = "";
+            do {
+                Menu.startMenu();
+                input = scanner.nextLine();
+                selection(input);
+            } while (!input.equals("0"));
+        }
+
+        private void choice2(Account account){
+            String input = "";
+            do {
+                Menu.loginMenu();
+                input = scanner.nextLine();
+                selection2(input, account);
+            } while (!input.equals("0"));
+        }
+
+        private void selection(String inp) {
+            switch (inp) {
+                case "1":
+                    Account account = accountService.createAccount();
+                    if (account!=null) {
+                        //accountService.save(account);
+                        accountService.saveToDB(account);
+                        System.out.println("Your card has been created");
+                        System.out.printf("Your card number:\n%s\nYour card PIN:\n%s\n\n", account.getCard().getCardNumber(), account.getCard().getCardPin());
+
+                    }
+                    break;
+                case "2":
+                    validateCard();
+                    break;
+                case "3":
+                    List<Account> accounts = accountService.all();
+                    if (accounts.size() == 0) {
+                        System.out.println("No accounts created\n");
+                        return;
+                    }
+                    System.out.println("Created Accounts\n");
+                    for(Account a: accounts) {
+                        System.out.println(a);
+                    }
+                    break;
+                case "0":
+                    System.out.println("Bye!");
+                    System.exit(0);
+                default:
+                    break;
+            }
+        }
+
+        private void selection2(String inp, Account account) {
+            switch (inp) {
+                case "1":
+                    System.out.printf("Balance: %s\n", account.getBalance());
+                    break;
+                case "2":
+                    System.out.println("You have successfully logged out!\n");
+                    choice();
+                    break;
+                case "0":
+                    System.exit(0);
+                default:
+                    break;
+            }
+        }
+
+        private void validateCard() {
+            System.out.println("Enter your card number:");
+            String cn = scanner.nextLine();
+            System.out.println("Enter your PIN:");
+            String p = scanner.nextLine();
+            //Account account = accountService.find(cn);
+            Account account = accountService.findInDB(cn);
+            System.out.println(account);
+            if (account == null) {
+                System.out.println("Wrong card number or PIN!\n");
+                return;
+            }
+
+            if (!account.getCard().getCardPin().equalsIgnoreCase(p)){
+                System.out.println("Wrong card number or PIN!\n");
+                return;
+            }
+
+            System.out.println("You have successfully logged in!\n");
+            choice2(account);
+        }
+    }
+  learner_created: true
+- name: src/banking/business/CardService.java
+  visible: true
+  text: |
+    package banking.business;
+
+    public class CardService {
+    }
+  learner_created: true
+- name: src/banking/persistence/SQLITE3DAOFactory.java
+  visible: true
+  text: |
+    package banking.persistence;
+
+    import org.sqlite.SQLiteDataSource;
+
+    import java.sql.Connection;
+    import java.sql.DriverManager;
+    import java.sql.SQLException;
+
+    public class SQLITE3DAOFactory extends DAOFactory{
+            public static final String DRIVER = "org.h2.Driver";
+            //public static final String DBURL = "jdbc:sqlite:C:/db/card.s3db";
+            public static final String DBURL = "jdbc:sqlite:./card.s3db";
+
+            // method to create H2 connections
+            public static Connection createConnection() throws SQLException{
+                // Use DRIVER and DBURL to create a connection
+                // Recommend connection pool implementation/usage
+                SQLiteDataSource dataSource = new SQLiteDataSource();
+                dataSource.setUrl(DBURL);
+                return dataSource.getConnection();
+            }
+
+            @Override
+            public AccountDAO getAccountDAO() {
+                // H2CompanyDAO implements CompanyDAO
+                return new SQLITE3AccountDAO();
+            }
+
+        }
+  learner_created: true
+- name: src/banking/business/Card.java
+  visible: true
+  text: |
+    package banking.business;
+
+    public class Card {
+        private String cardNumber;
+        private String cardPin;
+
+        public Card() {
+        }
+
+        public Card(String cardNumber, String cardPin) {
+            this.cardNumber = cardNumber;
+            this.cardPin = cardPin;
+        }
+
+        public String getCardNumber() {
+            return cardNumber;
+        }
+
+        public void setCardNumber(String cardNumber) {
+            this.cardNumber = cardNumber;
+        }
+
+        public String getCardPin() {
+            return cardPin;
+        }
+
+        public void setCardPin(String cardPin) {
+            this.cardPin = cardPin;
+        }
+
+        @Override
+        public String toString() {
+            return "Card{" +
+                    "cardNumber='" + cardNumber + '\'' +
+                    ", cardPin='" + cardPin + '\'' +
+                    '}';
+        }
+    }
+  learner_created: true
+- name: src/banking/business/AccountService.java
+  visible: true
+  text: |
+    package banking.business;
+
+    import banking.database.Store;
+    import banking.helpers.CardPinGenerator;
+    import banking.helpers.CustomerAccountNumberGenerator;
+    import banking.helpers.LuhnAlgorithmHelper;
+    import banking.persistence.AccountDAO;
+    import banking.persistence.AccountRepository;
+    import banking.persistence.DAOFactory;
+
+    import java.util.List;
+
+    public class AccountService {
+        private AccountRepository accountRepository;
+        private CustomerAccountNumberGenerator customerAccountNumberGenerator;
+        private CardPinGenerator cardPinGenerator;
+        private LuhnAlgorithmHelper luhnAlgorithmHelper;
+        private AccountDAO accountDAO;
+        private DAOFactory sqlite3Factory;
+
+        public AccountService() {
+            accountRepository = new AccountRepository();
+            customerAccountNumberGenerator = new CustomerAccountNumberGenerator();
+            cardPinGenerator = new CardPinGenerator();
+            luhnAlgorithmHelper = new LuhnAlgorithmHelper();
+            sqlite3Factory = DAOFactory.getDAOFactory(DAOFactory.SQLITE3);
+            accountDAO = sqlite3Factory.getAccountDAO();
+        }
+
+        public String createPin() {
+            return cardPinGenerator.generate4Digits();
+        }
+
+        public String createCustomerAccountNumber() {
+            String customerAccountNumber = customerAccountNumberGenerator.generate9Digits();
+            return  customerAccountNumber;
+        }
+
+        public String createCardNumber(Account account, String customerAccountNumber) {
+            String cardNumber = account.getBIN() + customerAccountNumber;
+            cardNumber += checkDigit(cardNumber);
+
+            return cardNumber;
+        }
+
+        public int checkDigit(String cardNo) {
+
+            int sum = luhnAlgorithmHelper.luhnSum(cardNo);
+            if(sum % 10 == 0){
+                return 0;
+            }
+            int rem = sum % 10;
+
+            return 10 - rem;
+        }
+
+        public Account createAccount() {
+            Account account = new Account();
+            Card card = new Card();
+            String customerAccountNumber = createCustomerAccountNumber();
+            String cardPin = createPin();
+            String cardNumber = createCardNumber(account, customerAccountNumber);
+
+            card.setCardNumber(cardNumber);
+            card.setCardPin(cardPin);
+
+            account.setCustomer_account_number(customerAccountNumber);
+            account.setCard(card);
+
+            return account;
+        }
+
+        public Account save(Account account) {
+            return accountRepository.addAccount(account);
+        }
+
+        public Account saveToDB(Account account) {
+            return accountDAO.addAccount(account);
+        }
+
+        public Account find(String c) {
+            return accountRepository.findAccount(c);
+        }
+
+        public Account findInDB(String c) {
+            return accountDAO.findAccount(c);
+        }
+
+        public boolean exist(String c) {
+            return accountRepository.cardExist(c);
+        }
+
+        public List<Account> all() {
+            return accountRepository.allAccounts();
+        }
+
+        public void createTable(){
+            accountDAO.createTable();
+        }
+
+        public void dropTable() {
+            accountDAO.dropTable();
+        }
+    }
+  learner_created: true
+- name: src/banking/helpers/CardPinGenerator.java
+  visible: true
+  text: |
+    package banking.helpers;
+
+    import java.util.Random;
+
+    public class CardPinGenerator {
+
+        private int leftLimit = 48;
+        private int rightLimit = 57;
+        private int targetStringLength = 4;
+        private Random random = new Random(1000000);
+
+        public String generate4Digits() {
+            return random.ints(leftLimit, rightLimit + 1)
+                    .limit(targetStringLength)
+                    .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
+                    .toString();
+        }
+    }
+  learner_created: true
+- name: src/banking/persistence/SQLITE3AccountDAO.java
+  visible: true
+  text: |
+    package banking.persistence;
+
+    import banking.business.Account;
+    import banking.business.Card;
+
+    import java.sql.*;
+    import java.util.ArrayList;
+    import java.util.List;
+
+    public class SQLITE3AccountDAO implements AccountDAO{
+        @Override
+        public Account addAccount(Account a) {
+            String insertPaymentSQL = "INSERT INTO \"CARD\" " +
+                    "(NUMBER , PIN) VALUES (?, ?)";
+
+            try (Connection con = SQLITE3DAOFactory.createConnection()) {
+
+                try (PreparedStatement insertPayment = con.prepareStatement(insertPaymentSQL);) {
+
+                    // Insert a payment
+                    insertPayment.setString(1, a.getCard().getCardNumber());
+                    insertPayment.setString(2, a.getCard().getCardPin());
+                    insertPayment.executeUpdate();
+                    System.out.println(a.getCard() + " saved");
+
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            return a;
+        }
+
+        @Override
+        public Account findAccount(String c) {
+            Account account = null;
+            String updatePaymentSQL = "SELECT * FROM \"CARD\" " +
+                    "WHERE NUMBER = ?";
+
+            try (Connection con = SQLITE3DAOFactory.createConnection()) {
+
+                try (PreparedStatement insertPayment = con.prepareStatement(updatePaymentSQL);) {
+                    // Insert a payment
+                    insertPayment.setString(1, c);
+
+                    ResultSet rs = insertPayment.executeQuery();
+                    while (rs.next()) {
+                        account = new Account();
+                        Card card = new Card();
+                        card.setCardNumber(rs.getString(2));
+                        card.setCardPin(rs.getString(3));
+                        account.setBalance(rs.getLong(4));
+                        account.setCard(card);
+                        break;
+                    }
+                    System.out.println(" query successful");
+
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            return account;
+        }
+
+        @Override
+        public boolean cardExist(String c) {
+            return false;
+        }
+
+        @Override
+        public List<Account> allAccounts() {
+            return null;
+        }
+
+        @Override
+        public void createTable() {
+            try (Statement statement = SQLITE3DAOFactory.createConnection().createStatement();){
+                statement.execute("create table if not exists card(" +
+                        "ID INTEGER PRIMARY KEY AUTOINCREMENT," +
+                        " NUMBER TEXT," +
+                        " PIN TEXT," +
+                        " BALANCE INTEGER DEFAULT 0" +
+                        ")");
+                System.out.println("CARD table created.");
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+
+        @Override
+        public void dropTable() {
+            try (Statement statement = SQLITE3DAOFactory.createConnection().createStatement();){
+                statement.execute("drop table CARD if exists");
+                System.out.println("CARD table dropped.");
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+  learner_created: true
+- name: src/banking/business/Account.java
+  visible: true
+  text: |
+    package banking.business;
+
+
+    import java.math.BigDecimal;
+
+    public class Account {
+        //Banking Identification Number
+        private final String BIN = "400000";
+        private final String CHECK_DIGIT = "9";
+
+        private String customer_account_number;
+        private long balance = 0;
+        private Card card;
+
+        public Account() {
+        }
+
+        public Account(Card card) {
+            this.card = card;
+        }
+
+        public Card getCard() {
+            return card;
+        }
+
+        public void setCard(Card card) {
+            this.card = card;
+        }
+
+        public long getBalance() {
+            return balance;
+        }
+
+        public void setBalance(long balance) {
+            this.balance = balance;
+        }
+
+        public String getBIN() {
+            return BIN;
+        }
+
+        public String getCHECK_DIGIT() {
+            return CHECK_DIGIT;
+        }
+
+        public String getCustomer_account_number() {
+            return customer_account_number;
+        }
+
+        public void setCustomer_account_number(String customer_account_number) {
+            this.customer_account_number = customer_account_number;
+        }
+
+        @Override
+        public String toString() {
+            return "Account{" +
+                    "BIN='" + BIN + '\'' +
+                    ", CHECK_DIGIT='" + CHECK_DIGIT + '\'' +
+                    ", customer_account_number='" + customer_account_number + '\'' +
+                    ", balance=" + balance +
+                    ", card=" + card +
+                    '}';
+        }
+    }
+  learner_created: true
 feedback_link: https://hyperskill.org/projects/93/stages/518/implement#comment
-status: Unchecked
+status: Solved
+feedback:
+  message: Well done! You've finished the project. Select a new project on <a href="https://hyperskill.org/projects">JetBrains
+    Academy</a> to continue learning.
+  time: Sat, 19 Feb 2022 17:02:36 UTC
 record: -1
